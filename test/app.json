@@ -5,7 +5,7 @@
     "icon": "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
   },
   "iconUrl": "https://avatars.githubusercontent.com/u/9919?s=200&v=4",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "language": "English",
   "baseUrl": "https://api.themoviedb.org",
   "streamType": "HLS",
