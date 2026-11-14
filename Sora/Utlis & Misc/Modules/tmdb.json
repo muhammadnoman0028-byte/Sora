@@ -1,0 +1,22 @@
+{
+  "sourceName": "TMDB Global (Movies & Series)",
+  "author": {
+    "name": "muhammadnoman0028-byte",
+    "icon": "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
+  },
+  "iconUrl": "https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg",
+  "version": "1.0.0",
+  "language": "Multi / English",
+  "baseUrl": "https://api.themoviedb.org",
+  "streamType": "HLS",
+  "quality": "1080p",
+  "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?query=%s",
+  "scriptUrl": "https://cdn.jsdelivr.net/gh/muhammadnoman0028-byte/Sora@dev/modules/tmdb.js",
+  "asyncJS": true,
+  "streamAsyncJS": false,
+  "softsub": true,
+  "multiStream": false,
+  "multiSubs": false,
+  "type": "movies",
+  "novel": false
+}
