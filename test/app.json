@@ -5,7 +5,7 @@
     "icon": "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
   },
   "iconUrl": "https://avatars.githubusercontent.com/u/9919?s=200&v=4",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "language": "English",
   "baseUrl": "https://api.themoviedb.org",
   "streamType": "HLS",
@@ -13,9 +13,9 @@
   "searchBaseUrl": "https://api.themoviedb.org/3/search/multi?query=%s",
   "scriptUrl": "https://raw.githubusercontent.com/muhammadnoman0028-byte/Sora/dev/test/app.js",
   "asyncJS": true,
-  "streamAsyncJS": false,
+  "streamAsyncJS": true,
   "softsub": true,
-  "multiStream": false,
+  "multiStream": true,
   "multiSubs": false,
   "type": "movies",
   "novel": false
