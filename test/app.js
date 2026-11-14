@@ -87,8 +87,8 @@ async function extractStreamUrl(episodeUrl) {
         episode = parts[parts.length - 1];
     }
 
-    let streamList = [];
-    let subList = [];
+    const streamList = [];
+    const subList = [];
 
     const headers = {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
@@ -119,7 +119,7 @@ async function extractStreamUrl(episodeUrl) {
         } catch (e) {}
     }
 
-    // 2. VidLink HLS JSON API Backup
+    // 2. VidLink HLS JSON API
     if (streamList.length === 0) {
         try {
             const vidlinkUrl = type === "movie"
@@ -139,6 +139,26 @@ async function extractStreamUrl(episodeUrl) {
                         if (data2.stream.captions[c].url) {
                             subList.push(data2.stream.captions[c].url);
                         }
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+
+    // 3. NontonGo / Multi-HLS JSON API Backup
+    if (streamList.length === 0) {
+        try {
+            const nontonUrl = type === "movie"
+                ? "https://www.nontongo.win/api/source/" + id
+                : "https://www.nontongo.win/api/source/" + id + "/" + season + "/" + episode;
+
+            const res3 = await fetchv2(nontonUrl, headers);
+            const data3 = await res3.json();
+
+            if (data3 && data3.data && data3.data.length > 0) {
+                for (let d = 0; d < data3.data.length; d++) {
+                    if (data3.data[d].file) {
+                        streamList.push(data3.data[d].file);
                     }
                 }
             }
