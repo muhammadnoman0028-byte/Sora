@@ -92,73 +92,72 @@ async function extractStreamUrl(episodeUrl) {
 
     const headers = {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
-        "Accept": "application/json, text/plain, */*"
+        "Accept": "*/*"
     };
 
-    // 1. AutoEmbed Multi-Server HLS JSON API
-    const servers = ["1", "2", "3"];
-    for (let i = 0; i < servers.length; i++) {
-        try {
-            const apiUrl = type === "movie"
-                ? "https://player.autoembed.cc/api/server?id=" + id + "&sr=" + servers[i]
-                : "https://player.autoembed.cc/api/server?id=" + id + "&s=" + season + "&e=" + episode + "&sr=" + servers[i];
+    // 1. VixSrc Direct M3U8 Extractor (No Cloudflare)
+    try {
+        const vixUrl = type === "movie"
+            ? "https://vixsrc.to/movie/" + id
+            : "https://vixsrc.to/tv/" + id + "/" + season + "/" + episode;
 
-            const res = await fetchv2(apiUrl, headers);
-            const data = await res.json();
+        const res1 = await fetchv2(vixUrl, headers);
+        const html1 = await res1.text();
 
-            if (data && data.url && (data.url.indexOf(".m3u8") !== -1 || data.url.indexOf(".mp4") !== -1)) {
-                streamList.push(data.url);
-            }
-            if (data && data.tracks && subList.length === 0) {
-                for (let t = 0; t < data.tracks.length; t++) {
-                    if (data.tracks[t].file) {
-                        subList.push(data.tracks[t].file);
-                    }
+        const tokenMarker = "token': '";
+        const expiresMarker = "expires': '";
+        const urlMarker = "url: '";
+
+        const uIdx = html1.indexOf(urlMarker);
+        const tIdx = html1.indexOf(tokenMarker);
+        const eIdx = html1.indexOf(expiresMarker);
+
+        if (uIdx !== -1 && tIdx !== -1 && eIdx !== -1) {
+            const baseUrl = html1.substring(uIdx + urlMarker.length, html1.indexOf("'", uIdx + urlMarker.length));
+            const token = html1.substring(tIdx + tokenMarker.length, html1.indexOf("'", tIdx + tokenMarker.length));
+            const expires = html1.substring(eIdx + expiresMarker.length, html1.indexOf("'", eIdx + expiresMarker.length));
+            const sep = baseUrl.indexOf("?") !== -1 ? "&" : "?";
+            const finalM3u8 = baseUrl + sep + "token=" + token + "&expires=" + expires + "&h=1";
+            streamList.push({
+                title: "VixSrc 1080p",
+                streamUrl: finalM3u8,
+                headers: {
+                    "Referer": "https://vixsrc.to/",
+                    "User-Agent": headers["User-Agent"]
                 }
-            }
-        } catch (e) {}
-    }
+            });
+        }
+    } catch (e) {}
 
-    // 2. VidLink HLS JSON API
+    // 2. Rivestream / Multi-Source JSON API Backup
     if (streamList.length === 0) {
         try {
-            const vidlinkUrl = type === "movie"
-                ? "https://vidlink.pro/api/b/movie/" + id
-                : "https://vidlink.pro/api/b/tv/" + id + "/" + season + "/" + episode;
+            const riveUrl = type === "movie"
+                ? "https://rivestream.org/api/backendfetch?requestID=movieVideoProvider&id=" + id + "&service=flowcast"
+                : "https://rivestream.org/api/backendfetch?requestID=tvVideoProvider&id=" + id + "&season=" + season + "&episode=" + episode + "&service=flowcast";
 
-            const res2 = await fetchv2(vidlinkUrl, {
-                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
-                "Referer": "https://vidlink.pro/"
-            });
+            const res2 = await fetchv2(riveUrl, headers);
             const data2 = await res2.json();
 
-            if (data2 && data2.stream && data2.stream.playlist) {
-                streamList.push(data2.stream.playlist);
-                if (data2.stream.captions) {
-                    for (let c = 0; c < data2.stream.captions.length; c++) {
-                        if (data2.stream.captions[c].url) {
-                            subList.push(data2.stream.captions[c].url);
-                        }
+            if (data2 && data2.data && data2.data.sources) {
+                for (let i = 0; i < data2.data.sources.length; i++) {
+                    const src = data2.data.sources[i];
+                    if (src.url) {
+                        streamList.push({
+                            title: src.quality || "Server " + (i + 1),
+                            streamUrl: src.url,
+                            headers: {
+                                "Referer": "https://rivestream.org/",
+                                "User-Agent": headers["User-Agent"]
+                            }
+                        });
                     }
                 }
             }
-        } catch (e) {}
-    }
-
-    // 3. NontonGo / Multi-HLS JSON API Backup
-    if (streamList.length === 0) {
-        try {
-            const nontonUrl = type === "movie"
-                ? "https://www.nontongo.win/api/source/" + id
-                : "https://www.nontongo.win/api/source/" + id + "/" + season + "/" + episode;
-
-            const res3 = await fetchv2(nontonUrl, headers);
-            const data3 = await res3.json();
-
-            if (data3 && data3.data && data3.data.length > 0) {
-                for (let d = 0; d < data3.data.length; d++) {
-                    if (data3.data[d].file) {
-                        streamList.push(data3.data[d].file);
+            if (data2 && data2.data && data2.data.captions) {
+                for (let c = 0; c < data2.data.captions.length; c++) {
+                    if (data2.data.captions[c].file) {
+                        subList.push(data2.data.captions[c].file);
                     }
                 }
             }
