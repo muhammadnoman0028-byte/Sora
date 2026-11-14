@@ -95,7 +95,7 @@ async function extractStreamUrl(episodeUrl) {
         "Accept": "application/json, text/plain, */*"
     };
 
-    // Server 1: AutoEmbed Multi-Server HLS API (Servers 1, 2, 3)
+    // 1. AutoEmbed Multi-Server HLS JSON API
     const servers = ["1", "2", "3"];
     for (let i = 0; i < servers.length; i++) {
         try {
@@ -119,25 +119,34 @@ async function extractStreamUrl(episodeUrl) {
         } catch (e) {}
     }
 
-    // Server 2: VidSrc / Embed-Su Direct M3U8 Extractor
+    // 2. VidLink HLS JSON API Backup
     if (streamList.length === 0) {
         try {
-            const embedUrl = type === "movie"
-                ? "https://vidsrc.icu/embed/movie/" + id
-                : "https://vidsrc.icu/embed/tv/" + id + "/" + season + "/" + episode;
+            const vidlinkUrl = type === "movie"
+                ? "https://vidlink.pro/api/b/movie/" + id
+                : "https://vidlink.pro/api/b/tv/" + id + "/" + season + "/" + episode;
 
-            const res2 = await fetchv2(embedUrl, headers);
-            const html = await res2.text();
-            const m3u8Match = html.match(/https?:\/\/[^"'\s]+\.m3u8[^"'\s]*/);
-            if (m3u8Match && m3u8Match[0]) {
-                streamList.push(m3u8Match[0]);
+            const res2 = await fetchv2(vidlinkUrl, {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15",
+                "Referer": "https://vidlink.pro/"
+            });
+            const data2 = await res2.json();
+
+            if (data2 && data2.stream && data2.stream.playlist) {
+                streamList.push(data2.stream.playlist);
+                if (data2.stream.captions) {
+                    for (let c = 0; c < data2.stream.captions.length; c++) {
+                        if (data2.stream.captions[c].url) {
+                            subList.push(data2.stream.captions[c].url);
+                        }
+                    }
+                }
             }
         } catch (e) {}
     }
 
-    // Server 3: MoviesAPI / Multi-Source HLS Backup
-    if (streamList.length === 0) {
-        try {
-            const api3 = type === "movie"
-                ? "https://moviesapi.club/movie/" + id
-                : "https://moviesapi.club/tv/" + id + "-" +
+    return JSON.stringify({
+        streams: streamList,
+        subtitles: subList
+    });
+}
